@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      WORDPRESS_DB_HOST: SEU_ENDPOINT_RDS
+      WORDPRESS_DB_USER: SEU_USER
+      WORDPRESS_DB_PASSWORD: SUA_SENHA
+      WORDPRESS_DB_NAME: wp_project
+    volumes:
+      - /mnt/efs:/var/www/html
