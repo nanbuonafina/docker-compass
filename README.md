@@ -9,9 +9,7 @@ Este projeto tem como objetivo configurar e implantar uma aplicação WordPress 
 ## Arquitetura
 
 A arquitetura do projeto segue a tipologia abaixo:
-
 ![image.png](arquitetura.png)
-<img align="center" src="https://github.com/nanbuonafina/docker-compass/blob/main/arquitetura.png"/>
 
 ## Tecnologias Utilizadas
 
