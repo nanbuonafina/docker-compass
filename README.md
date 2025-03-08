@@ -94,7 +94,7 @@ Criamos 3 Security Groups:
     - Selecione o **EFS** criado anteriormente
     - Mantenha o **Mount point padrão**
 6. **User Data Script:**
-    - Configure a instância para instalar e configurar automaticamente o Docker e o EFS usando o script [user-data](user-data.yaml)
+    - Configure a instância para instalar e configurar automaticamente o Docker e o EFS usando o script [user-data](user-data.yaml) ou configurar um próprio.
 
 ## Conectando-se via SSH
 
