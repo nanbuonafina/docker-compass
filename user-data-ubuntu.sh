@@ -19,7 +19,7 @@ sudo apt-get install -y ./build/amazon-efs-utils*deb
 sudo mkdir -p /mnt/efs
 
 # Configuração do EFS
-EFS_ID="fs-05f3b208a4dfd0f56"
+EFS_ID="fs-0374e331bc7e39f8a"
 REGION="sa-east-1"
 
 # Montar o EFS usando efs-utils
@@ -27,7 +27,7 @@ sudo mount -t nfs4 -o nfsvers=4.1,tcp ${EFS_ID}.efs.${REGION}.amazonaws.com:/ /m
 #sudo mount -t efs -o tls fs-05f3b208a4dfd0f56.efs.sa-east-1.amazonaws.com:/ /mnt/efs
 
 # Adicionar montagem ao /etc/fstab para persistência
-echo "fs-05f3b208a4dfd0f56.efs.sa-east-1.amazonaws.com:/ /mnt/efs efs defaults,_netdev 0 0" | sudo tee -a /etc/fstab
+echo "fs-0374e331bc7e39f8a.efs.sa-east-1.amazonaws.com:/ /mnt/efs efs defaults,_netdev 0 0" | sudo tee -a /etc/fstab
 
 # Instalar Docker Compose
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
