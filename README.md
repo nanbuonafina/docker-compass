@@ -160,6 +160,18 @@ Vá para **RDS > Create Database**
 
 ---
 
+## 📈 Configurando o Identity and Access Management (IAM)
+Configurar o IAM para integrar o Cloud Watch com a instância EC2 rodando o Wordpress. 
+
+Vá em **IAM** > **Roles** > Clique em **“Create Role”**
+
+- Selecione **AWS Service** e escolha **EC2** como entidade confiável
+- Anexe a política **“CloudWatchAgentServerPolicy”** para permitir que a instância envie métricas e logs
+- Dê um nome a role, por exemplo “EC2-CloudWatchAgent-Role”
+- Clique em **“Create Role”**
+
+---
+
 ## 🔑 Criar uma Instância Bastion Host
 Como as EC2 do WordPress estão em subnets privadas, precisamos de uma EC2 pública para intermediá-las.
 
@@ -181,7 +193,9 @@ Vá para **EC2 > Launch Instance**
 - **Subnet:** Escolha uma subnet pública
 - **Desabilitar IP Público**
 - **Security Group:** WP-EC2-SG.
-- **Script user-data.sh:** Copie o script referente a sua AMI no arquivo `user-data.sh` e cole. 
+- Em **Advanced Details:**
+    - **IAM Instance Profile:** Selecione o IAM criado anteriormente `EC2-CloudWatchAgent-Role`     
+    - **Script user-data.sh:** Copie/Baixe o script no arquivo `user-data.sh` e cole/upload. 
 
 ### 🔹 Configurar o Security Group das Instâncias WordPress
 No Security Group `WP-EC2-SG`, edite as regras de entrada:
