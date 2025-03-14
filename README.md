@@ -5,7 +5,7 @@
 
 ## 📌 Descrição do Projeto
 
-Este projeto tem como objetivo configurar e implantar uma aplicação **WordPress** dentro de um contêiner **Docker**, hospedado em uma instância **EC2 da AWS**. A infraestrutura é projetada para ser **escalável** e **segura**, utilizando recursos como **Amazon RDS, EFS, Load Balancer e Auto Scaling**.
+Este projeto tem como objetivo configurar e implantar uma aplicação **WordPress** dentro de um contêiner **Docker**, hospedado em uma instância **EC2 da AWS**, sendo monitorado com o **Cloud Watch** e a visualização das métricas em Dashboards. A infraestrutura é projetada para ser **escalável** e **segura**, utilizando recursos como **Amazon RDS, EFS, Load Balancer e Auto Scaling**.
 
 ---
 
@@ -26,6 +26,7 @@ A arquitetura do projeto segue a tipologia abaixo:
 🔹 **EFS para armazenamento**  
 🔹 **Load Balancer**  
 🔹 **Auto Scaling**  
+🔹 **Cloud Watch**  
 
 ---
 
