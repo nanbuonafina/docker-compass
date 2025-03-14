@@ -25,6 +25,7 @@ A arquitetura do projeto segue a tipologia abaixo:
 🔹 **RDS MySQL**  
 🔹 **EFS para armazenamento**  
 🔹 **Load Balancer**  
+🔹 **Auto Scaling**  
 
 ---
 
