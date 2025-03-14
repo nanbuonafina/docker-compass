@@ -57,10 +57,10 @@ services:
     ports:
       - "80:80"
     environment:
-      WORDPRESS_DB_HOST: wordpress-db.cx0yuyki0qpn.sa-east-1.rds.amazonaws.com
-      WORDPRESS_DB_USER: fernanda
-      WORDPRESS_DB_PASSWORD: COMPASS0fernandadb
-      WORDPRESS_DB_NAME: wp
+      WORDPRESS_DB_HOST: YOUR-ENDPOINT
+      WORDPRESS_DB_USER: YOUR-USER
+      WORDPRESS_DB_PASSWORD: YOUR-PAS
+      WORDPRESS_DB_NAME: YOUR-DB-NAME
     volumes:
       - /mnt/efs/projeto:/var/www/html
 EOL
