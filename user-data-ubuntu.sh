@@ -4,7 +4,10 @@
 sudo apt-get update -y && sudo apt-get upgrade -y
 
 # Instala dependências
-sudo apt-get install -y docker.io git nfs-common mysql-client binutils rustc cargo pkg-config libssl-dev amazon-cloudwatch-agent mysql-client
+sudo apt-get install -y docker.io git mysql-client binutils rustc cargo pkg-config libssl-dev mysql-client
+sudo apt-get install -y nfs-common
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i amazon-cloudwatch-agent.deb
 
 # Instala e configura o EFS Utils
 git clone https://github.com/aws/efs-utils
@@ -20,7 +23,8 @@ EFS_ID="fs-05f3b208a4dfd0f56"
 REGION="sa-east-1"
 
 # Montar o EFS usando efs-utils
-sudo mount -t efs -o tls fs-05f3b208a4dfd0f56.efs.sa-east-1.amazonaws.com:/ /mnt/efs
+sudo mount -t nfs4 -o nfsvers=4.1,tcp ${EFS_ID}.efs.${REGION}.amazonaws.com:/ /mnt/efs
+#sudo mount -t efs -o tls fs-05f3b208a4dfd0f56.efs.sa-east-1.amazonaws.com:/ /mnt/efs
 
 # Adicionar montagem ao /etc/fstab para persistência
 echo "fs-05f3b208a4dfd0f56.efs.sa-east-1.amazonaws.com:/ /mnt/efs efs defaults,_netdev 0 0" | sudo tee -a /etc/fstab
@@ -30,6 +34,8 @@ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 
 # Adicionar usuário ao grupo docker
+sudo systemctl enable --now docker
+sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
 
@@ -51,10 +57,10 @@ services:
     ports:
       - "80:80"
     environment:
-      WORDPRESS_DB_HOST: YOUR-ENDPOINT
-      WORDPRESS_DB_USER: YOUR-USER
-      WORDPRESS_DB_PASSWORD: YOUR-PASS
-      WORDPRESS_DB_NAME: YOUR-DB-NAME
+      WORDPRESS_DB_HOST: wordpress-db.cx0yuyki0qpn.sa-east-1.rds.amazonaws.com
+      WORDPRESS_DB_USER: fernanda
+      WORDPRESS_DB_PASSWORD: COMPASS0fernandadb
+      WORDPRESS_DB_NAME: wp
     volumes:
       - /mnt/efs/projeto:/var/www/html
 EOL
@@ -133,7 +139,7 @@ cat <<EOF > /opt/aws/amazon-cloudwatch-agent/bin/config.json
 EOF
 
 
-# Iniciar o CloudWatch Agent
+#Iniciar o CloudWatch Agent
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
 
