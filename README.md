@@ -5,7 +5,7 @@
 
 ## 📌 Descrição do Projeto
 
-Este projeto tem como objetivo configurar e implantar uma aplicação **WordPress** dentro de um contêiner **Docker**, hospedado em uma instância **EC2 da AWS**. A infraestrutura é projetada para ser **escalável** e **segura**, utilizando recursos como **Amazon RDS, EFS e Load Balancer**.
+Este projeto tem como objetivo configurar e implantar uma aplicação **WordPress** dentro de um contêiner **Docker**, hospedado em uma instância **EC2 da AWS**. A infraestrutura é projetada para ser **escalável** e **segura**, utilizando recursos como **Amazon RDS, EFS, Load Balancer e Auto Scaling**.
 
 ---
 
@@ -62,15 +62,20 @@ Repita os passos acima:
 - **IPv4 CIDR:** 10.0.2.0/24
 - **Crie a sub-rede**
 
-### 3️⃣ Criar uma Sub-rede Pública
-Essa sub-rede será usada para o NAT Gateway e o Load Balancer.
+### 3️⃣ Criar Duas Sub-rede Pública
+Essas sub-redes serão usadas para o NAT Gateway e o Load Balancer.
 
 Vá para **VPC > Subnets > Create Subnet**
 - Escolha a VPC criada
-- **Nome:** Subnet-Publica
+- **Nome:** Subnet-Publica-1
 - **Zona de Disponibilidade:** Pode ser qualquer uma
 - **IPv4 CIDR:** 10.0.3.0/24
 - **Clique em Create**
+
+- **Nome:** Subnet-Publica-2
+- **Zona de Disponibilidade:** Escolha uma AZ diferente da primeira
+- **IPv4 CIDR:** 10.0.4.0/24
+- **Crie a sub-rede**
 
 ### 4️⃣ Criar um Internet Gateway
 O Internet Gateway permitirá que a sub-rede pública tenha acesso à internet.
@@ -113,38 +118,88 @@ Agora, configuramos as rotas para cada sub-rede.
 
 Agora, as EC2 privadas terão acesso à internet via NAT Gateway, mas não serão acessíveis externamente.
 
-### 7️⃣ Criar um Security Group
-Criamos um Security Group para as instâncias EC2.
+### 7️⃣ Criar Security Group para as EC2, EFS, RDS e Load Balancer 
 
-Vá para **EC2 > Security Groups > Create Security Group**
-- **Nome:** SG-WordPress
+| Security Group | Regras de Entrada | Regras de Saída |
+|---------------|------------------|----------------|
+| **WP-LB-SG** | HTTP e HTTPS -> 0.0.0.0/0 | All Traffic |
+| **WP-EC2-SG** | HTTP e HTTPS -> WP-LB-SG <br> SSH -> Qualquer IPV4 (Somente para testes) | Padrão |
+| **WP-RDS-SG** | MySQL -> WP-EC2-SG | Padrão |
+| **WP-EFS-SG** | NFS -> WP-EC2-SG | Padrão |
 
-#### Regras de Entrada:
-- **Porta 22 (SSH):** Apenas da sua rede de administração (ex: MEU_IP/32)
-- **Porta 80 (HTTP):** Do Load Balancer
-- **Porta 8080 (HTTP):** Do Load Balancer
-- **Banco de Dados (3306 - MySQL):** Apenas das instâncias EC2
+---
 
-#### Regras de Saída:
-- **Permitir todo tráfego para internet**
+## Criar um Elastic File System (EFS)
+Vá para **EFS > Create File System**
+- **Type:** Regional
+- **Lifecycle Management:** None, None e None.    
+- **Performance** Bursting
+- **VPC:** VPC-wordpress
+- **Subnets:** Selecione as subnets privadas
+- **Clique em Create**
+
+---
+
+## Criar um Banco de Dados usando o Relational Database Service (RDS)
+Como as EC2 do WordPress estão em subnets privadas, precisamos de uma EC2 pública para intermediá-las.
+
+Vá para **RDS > Create Database**
+- **Creation method:** Standard
+- **Engine** MySQL
+- **Template:** Free Tier
+- **DB Identifier:** wordpress-db
+- **Credentials:** Defina o master username e a sua senha
+- **Instance Configuration:** db.t3.micro
+- **Connectivity:** Não conecte com nenhuma instância EC2
+- **VPC:** Selecione a VPC criada para o projeto `VPC-wordpress`
+- **DB Subnet Group:** Crie um subnet group selecionando a VPC do projeto e selecione as subnets privadas.
+- **Public Access:** No
+- **Security Group:** WP-RDS-SG.
+- **Additional configuration > Database Options > Initial Database Name:** Crie um nome inicial para a sua tabela, ele será usado no script do user-data.sh mais para frente.
+- **Clique em Create Database**
+
+---
+
+## 🔑 Criar uma Instância Bastion Host
+Como as EC2 do WordPress estão em subnets privadas, precisamos de uma EC2 pública para intermediá-las.
+
+Vá para **EC2 > Launch Instance**
+- **AMI:** Ubuntu
+- **Tipo:** t2.micro
+- **Rede:** VPC-wordpress
+- **Subnet:** Escolha uma subnet pública
+- **Habilitar IP Público**
+- **Security Group:** WP-EC2-SG.
+
+## 🔑 Criar uma Instância EC2 rodando o WordPress
+Agora, para configurar a instância com o Wordpress, faça as seguintes configurações:
+
+Vá para **EC2 > Launch Instance**
+- **AMI:** Ubuntu
+- **Tipo:** t2.micro
+- **Rede:** VPC-wordpress
+- **Subnet:** Escolha uma subnet pública
+- **Desabilitar IP Público**
+- **Security Group:** WP-EC2-SG.
+- **Script user-data.sh:** Copie o script referente a sua AMI no arquivo `user-data.sh` e cole. 
+
+### 🔹 Configurar o Security Group das Instâncias WordPress
+No Security Group `WP-EC2-SG`, edite as regras de entrada:
+- **SSH (22):** Permitir somente o IP do Bastion Host
 
 ---
 
 ## 🌐 Criando o Load Balancer
-
-Na AWS, há dois tipos de Load Balancer principais:
-1. **Application Load Balancer (ALB)** - Ideal para tráfego HTTP/HTTPS e aplicações distribuídas.
-2. **Instance Load Balancer (CLB)** - Distribui tráfego entre instâncias EC2.
 
 ### 🔗 Escolhendo e Criando o Load Balancer
 Neste projeto, utilizamos um **Application Load Balancer**.
 
 Vá para **EC2 > Load Balancers > Create Load Balancer**
 - Escolha **Application Load Balancer**
-- **Nome:** wordpress-alb
-- **VPC:** wordpress-vpc
+- **Nome:** WP-ALB
+- **VPC:** VPC-wordpress
 - **Subnets:** Escolha as subnets privadas
-- **Security Group:** sg-lb
+- **Security Group:** WP-LB-SG
 
 ### 🔥 Criando um Target Group
 O Target Group define para onde o Load Balancer direciona o tráfego.
@@ -153,7 +208,7 @@ Vá para **EC2 > Target Groups > Create Target Group**
 - **Tipo:** Instances
 - **Protocolo:** HTTP
 - **Porta:** 80
-- **VPC:** wordpress-vpc
+- **VPC:** VPC-wordpress
 - **Clique em Create Target Group**
 
 Após criar, associe as EC2 ao **Target Group**.
@@ -166,11 +221,10 @@ O **Auto Scaling Group (ASG)** permite escalar automaticamente suas instâncias 
 Vá para **EC2 > Auto Scaling > Create Auto Scaling Group**
 
 - **Nome:** wordpress-asg
-- **Selecionar AMI:** Escolha uma AMI Linux ou Ubuntu.
-- **Tipo de instância:** t3.micro (para testes).
-- **VPC e Subnets:** private-subnet-1, private-subnet-2
-- **Security Group:** sg-wordpress
-- **Load Balancer:** Adicione wordpress-alb
+- **Template:** Crie um template da instância EC2 rodando o Wordpress.
+- **VPC** VPC-wordpress
+- **Subnets** Selecione as duas subnets privadas
+- **Load Balancer:** Adicione WP-ALB
 - **Target Group:** Escolha o target group criado anteriormente
 - **Definir capacidade mínima/máxima:**
   - **Min:** 1
@@ -179,22 +233,6 @@ Vá para **EC2 > Auto Scaling > Create Auto Scaling Group**
 - **Política de Auto Scaling:** Ajustar com base no uso de CPU
 
 ---
-
-## 🔑 Criar uma Instância Bastion Host
-Como as EC2 do WordPress estão em subnets privadas, precisamos de uma EC2 pública para intermediá-las.
-
-Vá para **EC2 > Launch Instance**
-- **Nome:** bastion-host
-- **AMI:** Amazon Linux 2
-- **Tipo:** t2.micro
-- **Rede:** wordpress-vpc
-- **Subnet:** Escolha uma subnet pública
-- **Habilitar IP Público**
-- **Security Group:** Criar um novo `sg-bastion`
-
-### 🔹 Configurar o Security Group das Instâncias WordPress
-No Security Group `sg-wordpress`, edite as regras de entrada:
-- **SSH (22):** Permitir somente do Security Group do Bastion (`sg-bastion`)
 
 ### 🔗 Conectar-se às Instâncias via Bastion Host
 Acesse o Bastion Host via SSH:
@@ -211,7 +249,7 @@ ssh -i "minha-chave.pem" ec2-user@IP-PRIVADO-EC2
 
 ## 🎯 Conclusão
 
-Agora sua aplicação **WordPress** está rodando em um ambiente **seguro**, **escalável** e **gerenciado na AWS**, utilizando **Docker, RDS e Load Balancer** para garantir desempenho e disponibilidade. 🚀
+Agora sua aplicação **WordPress** está rodando em um ambiente **seguro**, **escalável** e **gerenciado na AWS**, utilizando **Docker, RDS, Load Balancer e Auto Scaling** para garantir desempenho e disponibilidade. 🚀
 
 ---
 
