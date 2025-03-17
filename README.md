@@ -168,7 +168,8 @@ Vá em **IAM** > **Roles** > Clique em **“Create Role”**
 
 - Selecione **AWS Service** e escolha **EC2** como entidade confiável
 - Anexe a política **“CloudWatchAgentServerPolicy”** para permitir que a instância envie métricas e logs
-- Dê um nome a role, por exemplo “EC2-CloudWatchAgent-Role”
+- Anexe a política **SecretsManagerReadWrite** para permitir que a instância acesse os segredos do Secret Manager
+- Dê um nome a role, por exemplo “EC2-WPAgent-Role”
 - Clique em **“Create Role”**
 
 ---
@@ -195,7 +196,7 @@ Vá para **EC2 > Launch Instance**
 - **Desabilitar IP Público**
 - **Security Group:** WP-EC2-SG.
 - Em **Advanced Details:**
-    - **IAM Instance Profile:** Selecione o IAM criado anteriormente `EC2-CloudWatchAgent-Role`     
+    - **IAM Instance Profile:** Selecione o IAM criado anteriormente `EC2-WPAgent-Role`     
     - **Script user-data.sh:** Copie/Baixe o script no arquivo `user-data.sh` e cole/upload. 
 
 ### 🔹 Configurar o Security Group das Instâncias WordPress
