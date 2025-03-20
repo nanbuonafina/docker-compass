@@ -174,6 +174,29 @@ Vá em **IAM** > **Roles** > Clique em **“Create Role”**
 
 ---
 
+## 🔐 Configurando o AWS Secrets Manager
+O **AWS Secrets Manager** permite armazenar credenciais sensíveis, como senhas de banco de dados, e recuperá-las de forma segura.
+
+### 📌 1.1 Criando um Segredo no Secrets Manager
+
+1. Acesse o **AWS Console** e vá para **Secrets Manager**  
+2. Clique em **"Store a new secret"**  
+3. Escolha **"Other type of secret"** e adicione os seguintes dados:
+
+   ```json
+   {
+     "WORDPRESS_DB_HOST": "seu-banco.cx0yuyki0qpn.sa-east-1.rds.amazonaws.com",
+     "WORDPRESS_DB_USER": "admin",
+     "WORDPRESS_DB_PASSWORD": "senha-segura",
+     "WORDPRESS_DB_NAME": "wordpress"
+   }
+
+4. Clique em Next
+5. Dê um nome ao segredo, ex: WordPressDBSecret
+6. Configure a rotação automática conforme necessário e clique em Store
+
+---
+
 ## 🔑 Criar uma Instância Bastion Host
 Como as EC2 do WordPress estão em subnets privadas, precisamos de uma EC2 pública para intermediá-las.
 
@@ -247,6 +270,46 @@ Vá para **EC2 > Auto Scaling > Create Auto Scaling Group**
   - **Max:** 3
   - **Desired:** 2
 - **Política de Auto Scaling:** Ajustar com base no uso de CPU
+
+---
+
+📊 Configurando Métricas e Gráficos no CloudWatch
+O CloudWatch permite monitorar o desempenho da infraestrutura, incluindo uso de CPU, memória e tráfego do Load Balancer.
+
+📌 Criando um Painel de Monitoramento
+- Acesse AWS Console > CloudWatch > Dashboards
+- Clique em "Create Dashboard"
+- Dê um nome ao painel, ex: WordPress-Monitoring
+- Clique em "Add Widget" para adicionar gráficos
+- Escolha "Metric Graph" e adicione métricas como:
+- CPUUtilization (EC2 > Auto Scaling Group)
+- MemoryUtilization (se ativado no CloudWatch Agent)
+- RequestCountPerTarget (ELB > Target Group)
+- Configure a exibição e clique em "Create Dashboard"
+
+---
+
+🚨 Configurando Alarmes no CloudWatch
+Os alarmes do CloudWatch notificam e acionam ações quando métricas atingem determinados limites.
+
+📌 Criando um Alarme para CPU Alta
+- Vá para AWS Console > CloudWatch > Alarms
+- Clique em "Create Alarm"
+- Escolha a métrica EC2 > Auto Scaling Group > CPUUtilization
+- Configure:
+- Condition: Maior que 70%
+- Period: 5 minutos
+- Notification: Enviar alerta por e-mail (SNS)
+- Clique em Create Alarm
+  
+📌 Criando um Alarme para Requests no Load Balancer
+- Vá para AWS Console > CloudWatch > Alarms
+- Escolha ELB > Target Group Metrics > RequestCountPerTarget
+Configure:
+- Condition: Maior que 500 requests por instância
+- Action: Auto Scaling > Add Capacity
+- Crie o alarme e salve
+Isso automaticamente adiciona mais instâncias se o Load Balancer tiver alto tráfego.
 
 ---
 
